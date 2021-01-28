@@ -1,30 +1,31 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql, ApolloError } = require('apollo-server');
+let ids = 4;
 
 const students =
     [
         {
-            "id":1,
+            "id": '1',
             "name": "Nazim",
             "email": "abc@gmail.com",
             "age": 22
         },
 
         {
-            "id":2,
+            "id": '2',
             "name": "Ali",
             "email": "def@gmail.com",
             "age": 22
         },
 
         {
-            "id":3,
+            "id": '3',
             "name": "Khan",
             "email": "ghi@gmail.com",
             "age": 22
         },
-        
+
         {
-            "id":4,
+            "id": '4',
             "name": "Jan",
             "email": "jkl@gmail.com",
             "age": 20
@@ -39,6 +40,48 @@ const resolvers = {
         // we can write business logic here
         students: () => students,
     },
+    Mutation: {
+
+        addStudent: (root, args, context, info) => {
+            console.log(args.input)
+            ids = ids + 1
+            students.push(
+                {
+
+                    id: ids,
+                    name: args.input.name,
+                    email: args.input.email,
+                    age: args.input.age
+                }
+            )
+            return {
+                id: ids,
+                name: args.input.name,
+                email: args.input.email,
+                age: args.input.age
+            }
+
+        },
+        updateStudent: (root, { id, input }, context, info) => {
+            // check whether the payload is exists
+            const ind = students.findIndex((st) => st.id == id);
+            if (ind === -1) throw new ApolloError('Student not found...')
+
+            // validate the payload
+
+
+            // mutate the payload
+            students[ind] = {
+                ...students[ind],
+                ...input
+            }
+
+            // return the predefined response
+            return students[ind];
+        }
+
+
+    }
 };
 
 
@@ -54,9 +97,21 @@ const typeDefs = gql`
     email: String
     age: Int
   }
+  input inputStudent {
+    name: String!
+    email: String!
+    age: Int!
+  }
 
   type Query {
     students: [Student]
+  }
+
+  type Mutation {
+    # addStudent is just name
+    addStudent(input: inputStudent!): Student!
+    updateStudent(id: ID!, input: inputStudent!): Student!
+    # deleteStudent(id: Int!): String!
   }
 `;
 
