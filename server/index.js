@@ -78,6 +78,14 @@ const resolvers = {
 
             // return the predefined response
             return students[ind];
+        },
+        deleteStudent: (root, args, context, info) => {
+            const value = students.findIndex((st) => st.id == args.id);
+            {
+                students.splice(value, 1);
+            }
+            return "Value Deleted"
+
         }
 
 
@@ -111,7 +119,7 @@ const typeDefs = gql`
     # addStudent is just name
     addStudent(input: inputStudent!): Student!
     updateStudent(id: ID!, input: inputStudent!): Student!
-    # deleteStudent(id: Int!): String!
+    deleteStudent(id: ID!): String!
   }
 `;
 
