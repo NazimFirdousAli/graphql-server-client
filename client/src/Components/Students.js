@@ -13,79 +13,91 @@ query {
 `;
 const ADD_STUDENT = gql`
 #addStudent is the general name 
-mutation AddStudent($name:String!,$age:Int!,$email:String!) {
+mutation AddStudent($name:String!,$email:String!,$age:Int!) {
     #addStudent is the name of mutatuin
-  addStudent(input:{name:$name,age:$age,email:$email}) {
+  addStudent(name:$name,email:$email,age:$age) {
     name
-    age
     email
+    age
   }
 }
 `;
 
 const UPDATE_STUDENT = gql`
-mutation ($id: ID!, $name: String!, $age: Int!, $email: String!) {
-  updateStudent(id: $id, input: { name: $name, age: $age, email: $email }) {
+mutation ($id: Int! ,$name: String!, $email: String! ,$age: Int!) {
+  updateStudent(id: $id ,name: $name, email: $email ,age: $age) {
     name
-    age
     email    
+    age
   }
 }
 
 `;
 
 const DELETE_STUDENT = gql`
-mutation($id: ID!){
+mutation($id: Int!){
     deleteStudent(id:$id)
 }
 `
 const Students = () => {
-
-
-    const { loading, error, data, refetch } = useQuery(Get_Students);
-    const [addStd] = useMutation(ADD_STUDENT);
-    const [updStd] = useMutation(UPDATE_STUDENT);
-    const [deleteStd] = useMutation(DELETE_STUDENT);
-
-
     const [id, setId] = useState('')
     const [name, setName] = useState('')
     const [age, setAge] = useState('')
     const [email, setEmail] = useState('')
     const [toggle, setToggle] = useState(false)
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error :(</p>;
-    console.log(data)
+    const { loading, data, refetch } = useQuery(Get_Students);
 
-    const { students } = data;
-    //we take addstd as variable
+    const [addStd] = useMutation(ADD_STUDENT, {
+        onCompleted: () => {
+            setName('')
+            setAge('')
+            setEmail('')
+            refetch()
+        },
+        onError: ({ message }) => alert(message)
+    });
+    const [updStd] = useMutation(UPDATE_STUDENT, {
+        onCompleted: () => {
+            setId('')
+            setName('')
+            setAge('')
+            setEmail('')
+            setToggle(false);
+            refetch()
+        },
+        onError: ({ message }) => alert(message)
+    });
+    const [deleteStd] = useMutation(DELETE_STUDENT, {
+        onCompleted: () => {
+            if (id) setId(id)
+            if (name) setName(name)
+            if (age) setAge(age)
+            if (email) setEmail(email)
+            if (toggle) setToggle(false);
+            refetch()
+        },
+        onError: ({ message }) => console.log(message)
+    });
 
     const submitValue = (event) => {
         event.preventDefault();
         if (toggle) {
-            refetch(updStd({ variables: { id: id, name: name, age: age, email: email } })).then(()=>{
-                setId('')
-                setName('')
-                setAge('')
-                setEmail('')
-                setToggle(false)
+            updStd({ variables: { id: id, name: name, age: age, email: email } }).then(() => {
 
-            })
+            }).catch((error) => console.log(error.message))
         }
         else {
-            refetch(addStd({ variables: { name: name, age: age, email: email } })).then(()=>{
-                setId('')
-                setName('')
-                setAge('')
-                setEmail('')
-            })
+            addStd({ variables: { name: name, age: age, email: email } })
+                .then(() => {
+
+                }).catch((error) => console.log(error.message))
         }
     }
 
 
     const update = (id) => {
-        const a = students.find((students) => students.id === id);
+        const a = data.students.find((student) => student.id === id);
         setId(a.id);
         setName(a.name);
         setAge(a.age);
@@ -94,17 +106,19 @@ const Students = () => {
     }
 
     const dlt = (id) => {
-        refetch(deleteStd({ variables: { id: id } }))
+        deleteStd({ variables: { id } })
     }
+    if (loading) return <p>Loading...</p>;
+
     return (
         <div>
             <form onSubmit={submitValue}>
                 Name: <input type="text" value={name} onChange={event => setName(event.target.value)} required /><br />
             Age:  <input type="number" value={age} onChange={event => setAge(parseInt(event.target.value))} required /><br />
             Email: <input type="email" value={email} onChange={event => setEmail(event.target.value)} required /><br />
-            
+
                 <button type="submit">{toggle ? 'UPDATE' : 'ADD'}</button>
-                
+
             </form>
 
             <div>
@@ -120,7 +134,7 @@ const Students = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map(std => {
+                        {data.students.map(std => {
                             return (
                                 <tr key={std.id}>
                                     <td>{std.id}</td>
